@@ -1,7 +1,7 @@
 <?php
 session_start();
-define('ADMIN_EMAIL', 'admin@example.com');
-define('ADMIN_PASSWORD', 'secret123');
+define('ADMIN_EMAIL', 'a@a.com');
+define('ADMIN_PASSWORD', 'a');
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: http://localhost:5173');
@@ -13,6 +13,14 @@ function jsonResponse(array $data, int $statusCode = 200): void {
     http_response_code($statusCode);
     echo json_encode($data);
     exit;
+}
+
+function requireAdmin(): void {
+    if (!isset($_SESSION['admin'])) {
+        jsonResponse([
+            'error' => 'Unauthorized'
+        ], 401);
+    }
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -43,16 +51,19 @@ if ($method === 'POST' && $path === '/api/admin/login') {
     ]);
 }
 
+if ($method === 'POST' && $path === '/api/admin/logout') {
+    $_SESSION = [];
+    session_destroy;
+    jsonResponse([
+        'message' => 'Logged Out'
+    ]);
+}
+
 if ($method === 'GET' && $path === '/api/admin/me') {
-    if (!isset($_SESSION['admin'])) {
-        jsonResponse([
-            'authenticated' => false
-        ], 401);
-    } else {
-        jsonResponse([
-            'authenticated' => true
-        ]);
-    }
+    requireAdmin();
+    jsonResponse([
+        'authenticated' => true
+    ]);
 }
 
 if ($method === 'GET' && $path === '/api/health') {
