@@ -1,4 +1,7 @@
 <?php
+session_start();
+define('ADMIN_EMAIL', 'admin@example.com');
+define('ADMIN_PASSWORD', 'secret123');
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: http://localhost:5173');
@@ -19,6 +22,37 @@ $path = parse_url($uri, PHP_URL_PATH);
 if ($method === 'OPTIONS') {
     http_response_code(204);
     exit;
+}
+
+if ($method === 'POST' && $path === '/api/admin/login') {
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    $email = $input['email'] ?? '';
+    $password = $input['password'] ?? '';
+
+    if ($email !== ADMIN_EMAIL || $password !== ADMIN_PASSWORD){
+        jsonResponse([
+            'error' => 'Invalid Credentials'
+        ], 404);
+    }
+
+    $_SESSION['admin'] = true;
+
+    jsonResponse([
+        'message' => 'Logged In'
+    ]);
+}
+
+if ($method === 'GET' && $path === '/api/admin/me') {
+    if (!isset($_SESSION['admin'])) {
+        jsonResponse([
+            'authenticated' => false
+        ], 401);
+    } else {
+        jsonResponse([
+            'authenticated' => true
+        ]);
+    }
 }
 
 if ($method === 'GET' && $path === '/api/health') {
